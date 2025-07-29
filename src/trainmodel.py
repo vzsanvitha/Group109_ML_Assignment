@@ -40,7 +40,7 @@ def main():
             mlflow.log_metric("accuracy", acc)
             mlflow.sklearn.log_model(lr, "model")
            
-            #mlflow.system_metrics.log_system_metrics()
+           
             models_results["Logistic_Regression"] = (acc, mlflow.active_run().info.run_id)
         
     ## Random Forest
