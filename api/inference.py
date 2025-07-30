@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__)
 
-# Load the best model from the "model" folder
+# Load the best model from the "model" folder ..
 model_path = os.path.join("model", "Logistic_Regression_best_model.pkl")
 model = joblib.load(model_path)
 
