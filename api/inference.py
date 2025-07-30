@@ -9,13 +9,11 @@ import os
 
 app = Flask(__name__)
 
-<<<<<<< HEAD
-# Load the best model from the "model" folder ..
-=======
-# Load the best model from the "model" folder
->>>>>>> c87947637d4e932f4152ce9fdf52ba0af45621f4
+
+# Load the best model from the "model" folderr
+
 model_path = os.path.join("model", "Logistic_Regression_best_model.pkl")
-model = joblib.load(model_path)
+model = jobib.load(model_path)
 
 # Create SQLite DB (in-memory or use a file like 'logs.db')
 conn = sqlite3.connect('logs.db', check_same_thread=False)
