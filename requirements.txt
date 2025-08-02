@@ -6,3 +6,4 @@ seaborn
 scikit-learn
 flask
 pydantic
+prometheus_client

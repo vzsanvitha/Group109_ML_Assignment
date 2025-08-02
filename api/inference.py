@@ -7,12 +7,31 @@ from datetime import datetime
 import threading
 import os
 
+from prometheus_client import Counter, Histogram, generate_latest
+from time import time
+
 app = Flask(__name__)
 
+# Prometheus metrics
+REQUEST_COUNT = Counter('api_requests_total', 'Total number of prediction requests')
+#REQUEST_LATENCY = Histogram('api_request_latency_seconds', 'Request latency')
+PREDICTION_COUNTER = Counter('model_predictions_total', 'Total predictions made', ['pclass'])
+
+REQUEST_LATENCY = Histogram('api_request_latency_seconds', 'Request latency in seconds')
+VALIDATION_ERRORS = Counter('validation_errors_total', 'Total number of validation errors')
+MODEL_LOAD_SUCCESS = Counter('model_load_success_total', 'Model load succeeded')
+MODEL_LOAD_FAILURE = Counter('model_load_failure_total', 'Model load failed')
+DB_INSERT_FAILURES = Counter('db_insert_failures_total', 'DB insert failures during logging')
 
 # Load the best model from the "model" folderr
 model_path = os.path.join("model", "Logistic_Regression_best_model.pkl")
-model = joblib.load(model_path)
+
+try:
+    model = joblib.load(model_path)
+    MODEL_LOAD_SUCCESS.inc()
+except:
+    MODEL_LOAD_FAILURE.inc()
+    raise
 
 # Create SQLite DB (in-memory or use a file like 'logs.db')
 conn = sqlite3.connect('logs.db', check_same_thread=False)
@@ -35,12 +54,14 @@ db_lock = threading.Lock()
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
+        start_time = time()
         input_data = request.get_json()
+        REQUEST_COUNT.inc()
         validated_input = IrisInput(**input_data)
         features = validated_input.features
 
         prediction = model.predict([features])[0]
-
+        PREDICTION_COUNTER.labels(pclass=str(prediction)).inc()
         # Log to DB
         with db_lock:
             cursor.execute(
@@ -51,7 +72,7 @@ def predict():
 
         return jsonify({"prediction": int(prediction)})
     except ValidationError as ve:
-        
+        VALIDATION_ERRORS.inc()
         errors = ve.errors()
         formatted_errors = [
             {
@@ -60,8 +81,13 @@ def predict():
             } for err in errors
         ]
         return jsonify({"validation_error": formatted_errors}), 422
+    except Exception as db_error:
+        DB_INSERT_FAILURES.inc()
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+    finally:
+        REQUEST_LATENCY.observe(time() - start_time)
 
 @app.route('/metrics', methods=["GET"])
 def metrics():
@@ -86,7 +112,9 @@ def metrics():
     <h3>Last 10 Prediction Logs</h3>
     {table_html}
     """
-
+@app.route('/prometheusmetrics', methods=["GET"])
+def metrics1():
+    return generate_latest(), 200, {'Content-Type': 'text/plain; version=0.0.4'}
 
 @app.route("/", methods=["GET"])
 def home():
