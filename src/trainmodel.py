@@ -1,3 +1,4 @@
+import pandas as pd
 import mlflow
 import mlflow.sklearn
 from mlflow.system_metrics.system_metrics_monitor import SystemMetricsMonitor
@@ -6,26 +7,45 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 import joblib
 
 def main():
     # -------- 1. Load Data --------
-    iris = load_iris()
+    #iris = load_iris()
+    file_path = 'data/iris.csv'
+    df = pd.read_csv(file_path)
+
+    # 
+    # -------- 2. Data Preprocessing --------
+
+    #Drop any missing rows (optional, if your file is clean, this has no effect)
+    df.dropna(inplace=True)
+
+    #Encode target labels
+    label_encoder = LabelEncoder()
+    df['target'] = label_encoder.fit_transform(df['Species'])
+
+    # Split features and labels
+    
+    X = df[["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"]]
+    y = df["target"]
+
     X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42
     )
 
-    # -------- 2. Configure MLflow --------
+    # -------- 3. Configure MLflow --------
     mlflow.set_tracking_uri("file:./mlruns")  # Local folder tracking
     mlflow.set_experiment("Iris_Classification")
     mlflow.sklearn.autolog()
     
-    print("ML Flow Version",mlflow.__version__)
+
     #mlflow.sklearn.autolog(log_input_examples=True, log_model_signatures=True, log_system_metrics=True)
 
     models_results = {}
 
-    # -------- 3. Train & Track Models --------
+    # -------- 4. Train & Track Models --------
     
 
     ## Logistic Regression
@@ -60,7 +80,7 @@ def main():
         
    
 
-    # -------- 4. Select Best Model & Register --------
+    # -------- 5. Select Best Model & Register --------
     best_model_name = max(models_results, key=lambda k: models_results[k][0])
     best_accuracy, best_run_id = models_results[best_model_name]
 
