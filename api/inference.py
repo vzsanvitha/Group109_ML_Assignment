@@ -23,7 +23,7 @@ MODEL_LOAD_SUCCESS = Counter('model_load_success_total', 'Model load succeeded')
 MODEL_LOAD_FAILURE = Counter('model_load_failure_total', 'Model load failed')
 DB_INSERT_FAILURES = Counter('db_insert_failures_total', 'DB insert failures during logging')
 
-# Load the best model from the "model" folderr
+# Load the best model from the "model" folder
 model_path = os.path.join("model", "Logistic_Regression_best_model.pkl")
 
 try:
