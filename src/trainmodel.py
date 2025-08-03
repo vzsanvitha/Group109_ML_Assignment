@@ -13,7 +13,7 @@ import joblib
 def main():
     # -------- 1. Load Data --------
     #iris = load_iris()
-    file_path = 'data/iris.csv'
+    file_path = 'data/Iris.csv'
     df = pd.read_csv(file_path)
 
     # 
